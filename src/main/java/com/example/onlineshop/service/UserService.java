@@ -1,13 +1,10 @@
 package com.example.onlineshop.service;
 
-import com.example.onlineshop.model.User;
-import org.springframework.stereotype.Service;
+import com.example.onlineshop.dto.request.UserRegistrationRequest;
+import com.example.onlineshop.dto.response.AuthenticationResponse;
 
 public interface UserService {
-    User register(User user);
-
-    User findByEmail(String email);
-
-    User findById(Long id);
+    AuthenticationResponse register(UserRegistrationRequest user);
+    AuthenticationResponse login(String email, String password);
 
 }

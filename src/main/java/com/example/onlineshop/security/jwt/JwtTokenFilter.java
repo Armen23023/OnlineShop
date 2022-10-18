@@ -2,13 +2,16 @@ package com.example.onlineshop.security.jwt;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.filter.GenericFilterBean;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import javax.servlet.*;
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 
-public class JwtTokenFilter extends GenericFilterBean {
+public class JwtTokenFilter extends UsernamePasswordAuthenticationFilter {
    private JwtTokenProvider jwtTokenProvider;
 
    public JwtTokenFilter(JwtTokenProvider jwtTokenProvider){
@@ -19,7 +22,6 @@ public class JwtTokenFilter extends GenericFilterBean {
         String token = jwtTokenProvider.resolveToken((HttpServletRequest) servletRequest);
         if (token!=null && jwtTokenProvider.validateToken(token)){
             Authentication authentication = jwtTokenProvider.getAuthentication(token);
-
             if (authentication != null){
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }

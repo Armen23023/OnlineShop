@@ -22,82 +22,82 @@ import java.util.List;
 @Component
 public class JwtTokenProvider {
 
-        @Value("${jwt.token.secret}")
-        private String secret;
+    @Value("${jwt.token.secret}")
+    private String secret;
 
-        @Value("${jwt.token.expired}")
-        private long validityInMilliseconds;
+    @Value("${jwt.token.expired}")
+    private long validityInMilliseconds;
 
 
-        @Autowired
-        private UserDetailsService userDetailsService;
+    @Autowired
+    private UserDetailsService userDetailsService;
 
-        @Bean
-        public BCryptPasswordEncoder passwordEncoder() {
-            BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder();
-            return bCryptPasswordEncoder;
+    @Bean
+    public BCryptPasswordEncoder passwordEncoder() {
+        BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder();
+        return bCryptPasswordEncoder;
+    }
+
+    @PostConstruct
+    protected void init() {
+        secret = Base64.getEncoder().encodeToString(secret.getBytes());
+    }
+
+    public String createToken(String username, List<Role> roles) {
+
+        Claims claims = Jwts.claims().setSubject(username);
+        claims.put("roles", getRoleNames(roles));
+
+        Date now = new Date();
+        Date validity = new Date(now.getTime() + validityInMilliseconds);
+
+        return Jwts.builder()//
+                .setClaims(claims)//
+                .setIssuedAt(now)//
+                .setExpiration(validity)//
+                .signWith(SignatureAlgorithm.HS256, secret)//
+                .compact();
+    }
+
+    public Authentication getAuthentication(String token) {
+        UserDetails userDetails = this.userDetailsService.loadUserByUsername(getUsername(token));
+        return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
+    }
+
+    public String getUsername(String token) {
+        return Jwts.parser().setSigningKey(secret).parseClaimsJws(token).getBody().getSubject();
+    }
+
+    public String resolveToken(HttpServletRequest req) {
+        final String bearerToken = req.getHeader("Authorization");
+        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+            return bearerToken.substring(7);
         }
+        return null;
+    }
 
-        @PostConstruct
-        protected void init() {
-            secret = Base64.getEncoder().encodeToString(secret.getBytes());
-        }
+    public boolean validateToken(String token) {
+        try {
+            Jws<Claims> claims = Jwts.parser().setSigningKey(secret).parseClaimsJws(token);
 
-        public String createToken(String username, List<Role> roles) {
-
-            Claims claims = Jwts.claims().setSubject(username);
-            claims.put("roles", getRoleNames(roles));
-
-            Date now = new Date();
-            Date validity = new Date(now.getTime() + validityInMilliseconds);
-
-            return Jwts.builder()//
-                    .setClaims(claims)//
-                    .setIssuedAt(now)//
-                    .setExpiration(validity)//
-                    .signWith(SignatureAlgorithm.HS256, secret)//
-                    .compact();
-        }
-
-        public Authentication getAuthentication(String token) {
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(getUsername(token));
-            return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
-        }
-
-        public String getUsername(String token) {
-            return Jwts.parser().setSigningKey(secret).parseClaimsJws(token).getBody().getSubject();
-        }
-
-        public String resolveToken(HttpServletRequest req) {
-            String bearerToken = req.getHeader("Authorization");
-            if (bearerToken != null && bearerToken.startsWith("Bearer_")) {
-                return bearerToken.substring(7, bearerToken.length());
+            if (claims.getBody().getExpiration().before(new Date())) {
+                return false;
             }
-            return null;
+
+            return true;
+        } catch (JwtException | IllegalArgumentException e) {
+            throw new JwtAuthenticationException("JWT token is expired or invalid");
         }
+    }
 
-        public boolean validateToken(String token) {
-            try {
-                Jws<Claims> claims = Jwts.parser().setSigningKey(secret).parseClaimsJws(token);
+    private List<String> getRoleNames(List<Role> userRoles) {
+        List<String> result = new ArrayList<>();
 
-                if (claims.getBody().getExpiration().before(new Date())) {
-                    return false;
-                }
+        userRoles.forEach(role -> {
+            result.add(role.getName());
+        });
 
-                return true;
-            } catch (JwtException | IllegalArgumentException e) {
-                throw new JwtAuthenticationException("JWT token is expired or invalid");
-            }
-        }
-
-        private List<String> getRoleNames(List<Role> userRoles) {
-            List<String> result = new ArrayList<>();
-
-            userRoles.forEach(role -> {
-                result.add(role.getName());
-            });
-
-            return result;
-        }
+        return result;
+    }
 }
 

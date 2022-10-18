@@ -14,12 +14,12 @@ import java.util.List;
 public class Role {
     @Id
     @Column
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column
     private String name;
 
-    @ManyToMany(mappedBy = "roles",fetch = FetchType.LAZY)
-    private List<User> users;
+//    @ManyToMany(mappedBy = "roles",fetch = FetchType.LAZY)
+//    private List<User> users;
 }
