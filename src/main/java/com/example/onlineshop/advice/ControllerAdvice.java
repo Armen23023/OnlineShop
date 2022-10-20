@@ -5,6 +5,7 @@ import com.example.onlineshop.dto.response.AppResponseInfo;
 import com.example.onlineshop.dto.response.AuthenticationResponse;
 import com.example.onlineshop.exceptions.BadRequestException;
 import com.example.onlineshop.exceptions.ResourceNotFoundException;
+import com.example.onlineshop.security.jwt.JwtAuthenticationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -35,6 +36,20 @@ public class ControllerAdvice {
     @ExceptionHandler(ResourceNotFoundException.class)
     @ResponseStatus(code = HttpStatus.NOT_FOUND)
     public AppResponseInfo handleResourceNotFoundException(ResourceNotFoundException exception) {
+        return new AppResponseInfo(exception.getMessage(), false);
+    }
+
+
+    @ExceptionHandler(JwtAuthenticationException.class)
+    @ResponseStatus(code = HttpStatus.BAD_REQUEST)
+    public AppResponseInfo handleJwtAuthenticationExceptionException(JwtAuthenticationException exception) {
+        return new AppResponseInfo(exception.getMessage(), false);
+    }
+
+
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(code = HttpStatus.INTERNAL_SERVER_ERROR)
+    public AppResponseInfo handleException(Exception exception) {
         return new AppResponseInfo(exception.getMessage(), false);
     }
 

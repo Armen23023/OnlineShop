@@ -30,7 +30,6 @@ public class CategoryController {
     @PreAuthorize("hasAnyAuthority('ADMIN', 'USER')")
     public ResponseEntity<List<CategoryResponse>> allCategories() {
         return ResponseEntity.ok(categoryService.allCategories());
-
     }
 
     @DeleteMapping("/{id}")

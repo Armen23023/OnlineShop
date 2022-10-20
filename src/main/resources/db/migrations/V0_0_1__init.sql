@@ -43,4 +43,9 @@ create table user_roles
     CONSTRAINT fk_user_roles_2 FOREIGN KEY (role_id) REFERENCES roles (id)
 );
 
+-- create table shopping_carts
+-- (
+--
+-- )
+
 

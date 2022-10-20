@@ -1,17 +1,19 @@
 package com.example.onlineshop.service.impl;
 
 import com.example.onlineshop.dto.request.ProductRequest;
-import com.example.onlineshop.dto.response.CategoryResponse;
+import com.example.onlineshop.dto.response.ProductListResponse;
 import com.example.onlineshop.dto.response.ProductResponse;
 import com.example.onlineshop.exceptions.BadRequestException;
-import com.example.onlineshop.mappers.ProductAddRequestToProductMapper;
-import com.example.onlineshop.mappers.ProductUpdateRequestToProductMapper;
+import com.example.onlineshop.exceptions.ResourceNotFoundException;
+import com.example.onlineshop.mappers.ProductRequestMapper;
+import com.example.onlineshop.mappers.ProductResponseMapper;
 import com.example.onlineshop.model.Product;
-import com.example.onlineshop.model.ProductCategory;
 import com.example.onlineshop.repository.ProductRepository;
 import com.example.onlineshop.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,73 +26,24 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
 
-    private ProductRepository productRepository;
+    private final ProductRepository productRepository;
 
-    private ProductAddRequestToProductMapper prodAddReqMapper;
-    private ProductUpdateRequestToProductMapper updateRequestToProductMapper;
+    private final ProductRequestMapper requestMapper;
+    private final ProductResponseMapper productResponseMapper;
 
     @Override
     @Transactional
     public ProductResponse add(final ProductRequest request) {
         if (!productRepository.existsByName(request.getName())) {
-            Product product = prodAddReqMapper.apply(request);
-            Product savedProduct = productRepository.save(product);
-            log.info("Product: {} successfully added ", savedProduct);
+            final Product product = productRepository.save(requestMapper.apply(request));
+            log.info("Product: {} successfully added ", product);
 
-            return ProductResponse.builder()
-                    .id(savedProduct.getId())
-                    .name(savedProduct.getName())
-                    .price(savedProduct.getPrice())
-                    .count(savedProduct.getCount())
-                    .category(savedProduct.getCategory())
-                    .build();
+            return productResponseMapper.apply(product);
         } else {
-            setCount(request);
-        }
-        return null;
-    }
-
-    @Override
-    @Transactional
-    public ProductResponse setCount(ProductRequest request) {
-        Long sum = request.getCount() + productRepository.getByCount(request.getName());
-
-        //nayel>>>>>>>>
-
-        Product updatedProduct = productRepository.save(Product.builder()
-                .name(request.getName())
-                .price(request.getPrice())
-                .count(sum)
-                .category(request.getCategory())
-                .build());
-        log.info("Product: {} successfully updated ", updatedProduct);
-
-        return ProductResponse.builder()
-                .id(updatedProduct.getId())
-                .name(updatedProduct.getName())
-                .price(updatedProduct.getPrice())
-                .count(updatedProduct.getCount())
-                .build();
-    }
-
-    @Override
-    @Transactional
-    public ProductResponse setPrice(ProductRequest request) {
-        if (productRepository.existsByName(request.getName())) {
-            Product product = updateRequestToProductMapper.apply(request);
-            Product savedProduct = productRepository.save(product);
-            log.info("Product price: {} successfully changed ", savedProduct);
-
-            return ProductResponse.builder()
-                    .id(savedProduct.getId())
-                    .name(savedProduct.getName())
-                    .price(savedProduct.getPrice())
-                    .count(savedProduct.getCount())
-                    .build();
-        } else {
-            throw new BadRequestException(String.format("Product with name = %s not found", request.getName()));
+            throw new BadRequestException(String.format("Product with name = %s already exist", request.getName()));
         }
     }
+
 
     @Override
     @Transactional
@@ -99,14 +52,35 @@ public class ProductServiceImpl implements ProductService {
     }
 
 
-
-
     @Override
     @Transactional(readOnly = true)
-    public List<ProductResponse> allProducts() {
-        return productRepository.findAll()
+    public ProductListResponse allProducts(int page, int size) {
+        Page<Product> all = productRepository.findAll(PageRequest.of(page, size));
+        return new ProductListResponse(all.getContent()
                 .stream()
-                .map(product -> new ProductResponse(product.getId(), product.getName(), product.getCount(), product.getPrice(),product.getCategory()))
-                .collect(Collectors.toList());
+                .map(productResponseMapper)
+                .collect(Collectors.toList()), all.getTotalPages());
+    }
+
+    @Override
+    @Transactional
+    public ProductResponse update(final long productId, final ProductRequest productData) {
+        final Product product = productRepository.findById(productId).orElseThrow(() -> new ResourceNotFoundException(String.format("Product with id = %s not found", productId)));
+
+        product.setCategory(productData.getCategory());
+        product.setName(productData.getName());
+        product.setPrice(productData.getPrice());
+        product.setCount(productData.getCount());
+
+        return productResponseMapper.apply(productRepository.save(product));
+    }
+
+    @Override
+    public ProductListResponse allProductsByCategory(long categoryId, int page, int size) {
+        Page<Product> all = productRepository.findByCategory_Id(categoryId, PageRequest.of(page, size));
+        return new ProductListResponse(all.getContent()
+                .stream()
+                .map(productResponseMapper)
+                .collect(Collectors.toList()), all.getTotalPages());
     }
 }
