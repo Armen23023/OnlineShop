@@ -17,7 +17,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 
@@ -61,6 +61,21 @@ public class ProductServiceImpl implements ProductService {
                 .map(productResponseMapper)
                 .collect(Collectors.toList()), all.getTotalPages());
     }
+
+    @Override
+    @Transactional
+    public ProductResponse getProductById(final Long productId) {
+        if (productRepository.findById(productId).isPresent()){
+            final Product product = productRepository.findById(productId).orElse(null);
+
+             return productResponseMapper.apply(product);
+        }else {
+            throw new BadRequestException(String.format("Product with id = %s not found", productId));
+
+        }
+    }
+
+    ////stugel
 
     @Override
     @Transactional

@@ -12,7 +12,6 @@ public class ProductResponseMapper implements Function<Product, ProductResponse>
     @Override
     public ProductResponse apply(final Product product) {
         ProductResponse response = new ProductResponse();
-
         response.setId(product.getId());
         response.setName(product.getName());
         response.setPrice(product.getPrice());

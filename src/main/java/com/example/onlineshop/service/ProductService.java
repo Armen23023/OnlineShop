@@ -12,6 +12,8 @@ public interface ProductService {
 
     ProductListResponse allProducts(int page, int size);
 
+    ProductResponse getProductById(Long productId);
+
     ProductResponse update(long productId, ProductRequest productDat);
 
     ProductListResponse allProductsByCategory(long categoryId, int page, int size);

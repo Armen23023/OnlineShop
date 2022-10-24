@@ -39,6 +39,11 @@ public class ProductController {
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'USER')")
+    public ResponseEntity getProduct(@PathVariable(name = "id") final long id) {
+        return ResponseEntity.ok(productService.getProductById(id));
+    }
 
     @GetMapping
     @PreAuthorize("hasAnyAuthority('ADMIN', 'USER')")
