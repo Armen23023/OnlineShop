@@ -5,6 +5,7 @@ import com.example.onlineshop.dto.request.ProductRequest;
 import com.example.onlineshop.dto.response.ProductListResponse;
 import com.example.onlineshop.dto.response.ProductResponse;
 import com.example.onlineshop.service.ProductService;
+import io.swagger.annotations.ApiParam;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,7 +27,7 @@ public class ProductController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('ADMIN')")
-    public ResponseEntity<ProductResponse> update(@PathVariable("id") final long productId,
+    public ResponseEntity<ProductResponse> update(@PathVariable("id") @ApiParam(value = "Product id", required = true) final long productId,
                                                   @RequestBody final ProductRequest productDat) {
         return ResponseEntity.ok(productService.update(productId, productDat));
     }
